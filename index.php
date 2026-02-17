@@ -38,8 +38,9 @@ function pg_pdo_from_url($url) {
     $db   = ltrim($parts["path"] ?? "", "/");
     $dsn = "pgsql:host=$host;port=$port;dbname=$db;sslmode=require";
     return new PDO($dsn, $user, $pass, [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-    ]);
+    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+    PDO::ATTR_PERSISTENT => true
+ ]);
 }
 $pdo = pg_pdo_from_url($DB_URL);
 
@@ -48,13 +49,17 @@ function tg($method, $data = []) {
     global $BOT_TOKEN;
     $url = "https://api.telegram.org/bot{$BOT_TOKEN}/{$method}";
     $ch = curl_init($url);
+
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_POST => true,
         CURLOPT_HTTPHEADER => ["Content-Type: application/json"],
         CURLOPT_POSTFIELDS => json_encode($data),
-        CURLOPT_TIMEOUT => 25
+        CURLOPT_CONNECTTIMEOUT => 3,
+        CURLOPT_TIMEOUT => 10,
+        CURLOPT_DNS_CACHE_TIMEOUT => 300
     ]);
+
     $res = curl_exec($ch);
     curl_close($ch);
     return $res ? json_decode($res, true) : null;
